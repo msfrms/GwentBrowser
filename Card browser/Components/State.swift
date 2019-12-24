@@ -1,7 +1,7 @@
 import Foundation
 
 /// Top level state is usually a composition of different domain states.
-struct State {
+struct State: Codable {
     let cardList: CardListState
     let selectedCard: SelectedCardState
     
@@ -11,8 +11,9 @@ struct State {
 }
 
 /// Reduce for composit states is trivial
-func reduce(_ state: State, with action: Action) -> State {
+func reduce(_ state: State, _ action: Action) -> State {
     return State(
         cardList: reduce(state.cardList, with: action),
-        selectedCard: reduce(state.selectedCard, with: action))
+        selectedCard: reduce(state.selectedCard, with: action)
+    )
 }

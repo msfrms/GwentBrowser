@@ -1,6 +1,6 @@
 import Foundation
 
-struct CardListState {
+struct CardListState: Codable {
     let links: [CardLink]
     let nextPageURL: URL?
     

@@ -3,6 +3,8 @@ import Foundation
 /// Reducer is a rule to proceed from current state to a new one
 typealias Reducer<State> = (State, Action) -> State
 
+typealias Middleware<State> = (State, Action, Dispatcher) -> Void
+
 /// Store is a single mutation point of our app state.
 /// Store is a natural dispathcer
 final class Store<State>: Dispatcher {
@@ -14,19 +16,30 @@ final class Store<State>: Dispatcher {
     private var state: State
     
     private var reducer: Reducer<State>
+
+    private let middleware: Middleware<State>
  
     /// Also, store need to notify everyone about state changes
     private var subscribers: Set<CommandWith<State>> = []
     
-    init(state: State, reducer: @escaping Reducer<State>) {
+    init(state: State, reducer: @escaping Reducer<State>, middleware: @escaping Middleware<State> = { _, _, _ in }) {
         self.state = state
         self.reducer = reducer
+        self.middleware = middleware
     }
-    
+
     /// Dispatch is async by nature.
     func dispatch(action: Action) {
         queue.async {
             self.state = self.reducer(self.state, action)
+            self.subscribers.forEach { $0.perform(with: self.state) }
+            self.middleware(self.state, action, self)
+        }
+    }
+
+    func setState(_ state: State) {
+        queue.async {
+            self.state = state
             self.subscribers.forEach { $0.perform(with: self.state) }
         }
     }

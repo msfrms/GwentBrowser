@@ -3,4 +3,4 @@
 /// without breaking existed components.
 ///
 /// Also sometimes it is nice to implement `Codable` or `Equatable`
-protocol Action {}
+protocol Action: Codable {}

@@ -1,23 +1,69 @@
 import UIKit
+import MonitorDevToolsSwift
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     
+    let monitor = Monitor(url: "ws://localhost:8000/socketcluster/", clientId: "card_browser_ios_client", ssl: false)
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
 
-        let store = Store(state: State.initial, reducer: reduce)
+        let store = Store(state: State.initial, reducer: reduce, middleware: { [unowned self] state, action, _ in
+            let actionWrap = ActionState(action: action)
+            let actionMonitor = MonitorDevToolsSwift.Action<ActionState, State>(
+                title: actionWrap.title,
+                action: actionWrap,
+                state: state
+            )
+
+            self.monitor.send(action: actionMonitor)
+        })
         let navigation = window?.rootViewController as! UINavigationController
         let vc = navigation.viewControllers.first as! CardListViewController
         
         /// Connect initial controller to application store.
         vc.connect(to: store)
-        
-        /// Triggering initial load of cards.
-        let url = URL(string: "https://api.gwentapi.com/v0/cards")!
-        store.dispatch(future: loadCards(url: url))
-        
+
+        monitor.onConnected = {
+            let url = URL(string: "https://api.gwentapi.com/v0/cards")!
+            store.dispatch(future: loadCards(url: url))
+        }
+
+        monitor.observe { dispatch in
+            switch dispatch {
+
+            case .jumpToAction(let jsonState):
+                let state = try! JSONDecoder().decode(State.self, from: jsonState.data(using: .utf8)!)
+                store.setState(state)
+
+            case .jumpToState(let jsonState):
+                let state = try! JSONDecoder().decode(State.self, from: jsonState.data(using: .utf8)!)
+                store.setState(state)
+
+            case .action(let payload):
+                func dispatchAction(_ action: ActionState) {
+                    switch action {
+                    case .didLoadCard(let loadCard):
+                        store.dispatch(action: loadCard)
+                    case .didLoadCardLinks(let loadLinks):
+                        store.dispatch(action: loadLinks)
+                    case .didSelectCard(let select):
+                        store.dispatch(action: select)
+                    case .none: ()
+                    }
+                }
+                let action = try! JSONDecoder().decode(ActionState.self, from: payload.data(using: .utf8)!)
+                dispatchAction(action)
+
+            default:
+                break
+            }
+        }
+
+        monitor.connect()
+
         return true
     }
 }

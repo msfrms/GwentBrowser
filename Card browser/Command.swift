@@ -86,4 +86,9 @@ extension CommandWith {
             }
         }
     }
+    func delay(_ delay: DispatchTimeInterval, queue: DispatchQueue = .main) -> CommandWith<T> {
+        return  CommandWith<T>(id: self.id) { value in
+            queue.asyncAfter(deadline: .now() + delay) { self.perform(with: value) }
+        }
+    }
 }

@@ -12,7 +12,14 @@ import Foundation
 func selectCard(link: CardLink, getURL: @escaping (URL) -> Future<Card> = getURL) -> CommandWith<Dispatcher> {
     return CommandWith { dispatcher in
         dispatcher.dispatch(action: DidSelectCard(link: link))
-        dispatcher.dispatch(future:
-            getURL(link.href).map(transform: DidLoadCard.init))
+        Command {
+            let action = DidLoadCard(card: Card(
+                name: "Name",
+                flavor: "Flavor",
+                strength: 5,
+                info: "Info"))
+            dispatcher.dispatch(action: action)
+        }.delay(.seconds(1)).perform()
+        
     }
 }

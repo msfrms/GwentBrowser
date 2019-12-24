@@ -6,7 +6,7 @@ struct CardsResponse: Codable {
 }
 
 struct CardLink: Codable {
-    let href: URL
+    let href: String
     let name: String
 }
 
