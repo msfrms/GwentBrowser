@@ -12,7 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         let store = Store(state: State.initial, reducer: reduce, middleware: { [unowned self] state, action, _ in
             let actionWrap = ActionState(action: action)
-            let actionMonitor = MonitorDevToolsSwift.Action<ActionState, State>(
+            let actionMonitor = DevToolsAction<ActionState, State>(
                 title: actionWrap.title,
                 action: actionWrap,
                 state: state
