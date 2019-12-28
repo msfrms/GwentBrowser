@@ -31,31 +31,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             store.dispatch(future: loadCards(url: url))
         }
 
-        monitor.observe { dispatch in
+        monitor.observe { (dispatch: Monitor.Dispatch<ActionState, State>) in
+            func dispatchAction(_ action: ActionState) {
+                action.action.map { store.dispatch(action: $0) }
+            }
+            
             switch dispatch {
 
-            case .jumpToAction(let jsonState):
-                let state = try! JSONDecoder().decode(State.self, from: jsonState.data(using: .utf8)!)
+            case .jumpToAction(let state):
                 store.setState(state)
 
-            case .jumpToState(let jsonState):
-                let state = try! JSONDecoder().decode(State.self, from: jsonState.data(using: .utf8)!)
+            case .jumpToState(let state): ()
                 store.setState(state)
 
-            case .action(let payload):
-                func dispatchAction(_ action: ActionState) {
-                    switch action {
-                    case .didLoadCard(let loadCard):
-                        store.dispatch(action: loadCard)
-                    case .didLoadCardLinks(let loadLinks):
-                        store.dispatch(action: loadLinks)
-                    case .didSelectCard(let select):
-                        store.dispatch(action: select)
-                    case .none: ()
-                    }
-                }
-                let action = try! JSONDecoder().decode(ActionState.self, from: payload.data(using: .utf8)!)
+            case .action(let action):
                 dispatchAction(action)
+
+            case .import(let devToolsImport):
+                guard let initialState = devToolsImport.states.first else { return }
+                let actions: [Action] = devToolsImport.actions.compactMap { $0.action }
+                store.setState(initialState)
+                let _ = actions.map { store.dispatch(action: $0) }
 
             default:
                 break

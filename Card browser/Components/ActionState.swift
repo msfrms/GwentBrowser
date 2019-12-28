@@ -87,6 +87,19 @@ enum ActionState: Codable {
             return "None"
         }
     }
+
+    var action: Action? {
+        switch self {
+        case .didLoadCard(let loadCard):
+            return loadCard
+        case .didLoadCardLinks(let loadLinks):
+            return loadLinks
+        case .didSelectCard(let select):
+            return select
+        case .none:
+            return nil
+        }
+    }
 }
 
 func reduce(_ state: ActionState, with action: Action) -> ActionState {
